@@ -28,7 +28,7 @@
 %                               variables except the one being tested. The value of this statistic shoudl be compared to a distirbution of staitsitc values obtained by erforing the same oprateion on shuffled 
 %                               data, directly using the p-value assocaited with the staitstic is not valid given the autocorrelations in the data.
 
-function [abs_contrib,relative_contrib,Fstat_mat,full_R2_vec] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach)
+function [relative_contrib,Fstat_mat,full_R2_vec] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach)
 Fstat_mat = 1;
 numcells = size(neural_act_mat{1},2);
 numtrials_all = length(pred_allmat);
@@ -52,7 +52,6 @@ full_R2_vec = zeros(numcells,1);
 partial_R2_vec = zeros(numcells,length(pred_inds_cell));
 relative_contrib = zeros(numcells,length(pred_inds_cell));
 abs_contrib = zeros(numcells, length(pred_inds_cell));
-
 for cellctr = 1:numcells
     cur_good_trials = 1:find(defined_mat(:,cellctr),1,'last');
     num_trials_per_fold = ceil(length(cur_good_trials)/num_cv_folds);

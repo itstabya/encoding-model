@@ -1,4 +1,5 @@
-load tb_preprocessed_TB41.mat
+
+load tb_preprocessed_TB41.mat %essentially just loading data
 fdata = trial_data{2};
 T = size(fdata, 2);
 id = trial_id{2}; %vis stim
@@ -8,6 +9,7 @@ curr_dir = pwd;
 ntrials = size(fdata, 3);
 
 %%
+%processes, segments into relevant variables
 load behavior_file_TB41.mat
 %1 = r, 2 = l stim location
 choice = data.response.choice(1:ntrials);
@@ -41,8 +43,11 @@ spacings = floor((1:41) * fs);
 spacings = spacings - spacings(15);
 
 %%
+%  
 % Subsample the trials with opp_contrast == 0.32 and choice ~= 5
-goodtrials = (choice(2:end) ~= 5) & (choice(1:end-1) ~= 5);
+goodtrials = (choice(2:end) ~= 5) & (choice(1:end-1) ~= 5); %choice is vector for animal's choice @ each trial
+% 1 - left, 2 - right
+% 5 means animal misses the trial (doesn't pick anything)
 goodtrials = logical([0 goodtrials]);
 %goodtrials = (choice ~= 5);
 %goodtrials(1) = 0;
@@ -128,17 +133,14 @@ for i = 1:180
     plot([i * 41, i * 41], [-200 1000], '--');
 end
 
-
-
-
-
 save('TB41_predallmat.mat', 'neural_matmat', 'predall_matmat', 'neural_act_mat', 'pred_allmat');
 %% Do encoding model
 approach = 'norefit';
 pred_types_cell_group = {'event', 'whole-trial', 'whole-trial', 'whole-trial', 'continuous'};
 
-[relative_contrib,~,r2val] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach);
-
+[abs_contrib, relative_contrib, ~, r2val] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach);
+%% Saving data
+csvwrite('abs_contrib.csv',abs_contrib)
 
 %% Visualize
 means = nanmean(relative_contrib, 1);
@@ -165,7 +167,7 @@ ylabel('Choice contribution')
 
 
 %% Cumulative distribution of r2 values
-%plot(sort(r2val), (1:numel(r2val)) / numel(r2val));
+plot(sort(r2val), (1:numel(r2val)) / numel(r2val));
 
 
 
