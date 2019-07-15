@@ -30,6 +30,7 @@
 
 function [abs_contrib,relative_contrib,Fstat_mat,full_R2_vec] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach)
 Fstat_mat = 1;
+
 numcells = size(neural_act_mat{1},2);
 numtrials_all = length(pred_allmat);
 
@@ -42,30 +43,33 @@ for trctr=1:numtrials_all
     trial_length_vec (trctr) = size(neural_act_mat{trctr},1);
 end
 
-
 % use crossvalidation to find the best polynomial degree to apply for the continuous variables
+% cross validation of size 5, line below - this is to prevent overfitting
+% with the data
 num_cv_folds = 5;
 max_poly_deg = 3;
 
 % rng(0,'twister')
 full_R2_vec = zeros(numcells,1);
 partial_R2_vec = zeros(numcells,length(pred_inds_cell));
-relative_contrib = zeros(numcells,length(pred_inds_cell));
+relative_contrib = zeros(numcells,length(pred_inds_cell)); %referencing the formula 
 abs_contrib = zeros(numcells, length(pred_inds_cell));
 
 for cellctr = 1:numcells
-    cur_good_trials = 1:find(defined_mat(:,cellctr),1,'last');
+    cur_good_trials = 1:find(defined_mat(:,cellctr),1,'last'); % Take out trials with nan's
     num_trials_per_fold = ceil(length(cur_good_trials)/num_cv_folds);
     
     temp_neural_act = cell2mat(neural_act_mat(cur_good_trials));
     cur_neural_act_mat = mat2cell(temp_neural_act(:, cellctr),trial_length_vec(cur_good_trials),1);
     
-    % zscore the predictors
+    % zscore the predictors %standardizing data to unit variance and zero
+    % mean
     cur_pred_allmat_z = mat2cell(zscore(cell2mat(pred_allmat(cur_good_trials))),trial_length_vec(cur_good_trials),size(pred_allmat{1},2));
     rng('default')
     cur_random_vector = randperm(length(cur_good_trials));
     
-    % get indices of test and train trials for CV
+    % get indices of test and train trials for CV %help prevent overfitting
+    % - through each index
     for foldctr = 1:num_cv_folds
         kf_inds{foldctr} = num_trials_per_fold*(foldctr-1)+1:min(num_trials_per_fold*foldctr,length(cur_good_trials));
         test_trials_folds{foldctr} = cur_random_vector(kf_inds{foldctr});
@@ -75,6 +79,8 @@ for cellctr = 1:numcells
     [~,F_vec] = get_f_pvals_reg(cell2mat(cur_pred_allmat_z),zscore(cell2mat(cur_neural_act_mat)),pred_inds_cell);
     %Fstat_mat(cellctr,:) = F_vec;
     
+    
+    % BIG BLOCK FOR MAKING THE X MATRIX
     % make matrix of all possible combinations of polynomial degrees for all continuous variables
     cont_inds = find_non_empty_cells(strfind(pred_types_cell,'continuous'));
     non_cont_inds = setdiff(1:length(pred_types_cell),cont_inds);
@@ -145,25 +151,29 @@ for cellctr = 1:numcells
             for curdegctr = 1:all_degs_mat(best_deg_ind,cont_var_ctr)
                 all_cont_pred_add{cont_var_ctr} = [all_cont_pred_add{cont_var_ctr} cur_base_preds{cont_var_ctr}.^curdegctr];
             end
-            cur_num_preds = size(full_predmat ,2);
+            cur_num_preds = :,size(full_predmat ,2);
             full_predmat = [full_predmat zscore(all_cont_pred_add{cont_var_ctr})];
             pred_inds_cell_new{cont_inds(cont_var_ctr)} = (1:size(all_cont_pred_add{cont_var_ctr},2))+cur_num_preds ;
         end
     end
 
     full_predmat_cell = mat2cell(full_predmat,trial_length_vec(cur_good_trials),size(full_predmat,2));
-    
+    % END OF BIG BLOCK
     
     % now calculate the relative contributions.  first calculate the R2 when each variable is omitted.
     
     if ~isempty(full_R2_vec(cellctr,1))
         full_R2_vec(cellctr,1) = get_CV_R2(full_predmat_cell,cur_neural_act_mat,test_trials_folds,train_trials_folds,trial_length_vec(cur_good_trials));
     end
+    
+    % Step through each of the 7 factors (indexed by varctr), dropping each
+    % one and recalculating R2
     for varctr = 1:length(pred_inds_cell_new)
         partial_R2_vec(cellctr,varctr) =  get_CV_R2(full_predmat_cell,cur_neural_act_mat,test_trials_folds,train_trials_folds,trial_length_vec(cur_good_trials),cell2mat(pred_inds_cell_new(varctr)),approach);
     end
     
     cur_R2_diff = (full_R2_vec(cellctr,1) - partial_R2_vec(cellctr,:))/full_R2_vec(cellctr,1);
+    dbstop if naninf
     abs_contrib(cellctr,:) = cur_R2_diff;
     cur_R2_diff(cur_R2_diff<0)=0;
     cur_R2_diff(cur_R2_diff>1)=1;

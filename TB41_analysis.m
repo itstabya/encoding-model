@@ -10,7 +10,7 @@ ntrials = size(fdata, 3);
 
 %%
 %processes, segments into relevant variables
-load behavior_file_TB41.mat
+load behavior_file_TB41.mat % gives information about the actual trial?
 %1 = r, 2 = l stim location
 choice = data.response.choice(1:ntrials);
 %ntrials = numel(choice);
@@ -19,7 +19,7 @@ opp_contrasts = data.stimuli.opp_contrast(1:ntrials);
 loc = data.stimuli.loc(1:ntrials);
 contrast = data.params.contrast;
 
-% Create the stim vectors
+% Creating the stimulus vectors
 lstim = ones(1, ntrials) * contrast;
 rstim = ones(1, ntrials) * contrast;
 
@@ -54,7 +54,7 @@ goodtrials = logical([0 goodtrials]);
 %goodtrials(258) = 0; %exclude this trial because neural activity has nan's
 %TODO: consider not excluding this
 
-lstim = lstim(goodtrials);
+lstim = lstim(goodtrials); %%% only taking out/considering the good trials?
 rstim = rstim(goodtrials);
 loc = loc(goodtrials);
 choice = choice(goodtrials);
@@ -107,7 +107,7 @@ for i = 1:ntrialsgood
 end    
 
 
-pred_types_cell = {'event', 'event', 'event', 'whole-trial', 'whole-trial', 'whole-trial', 'continuous'};
+pred_types_cell = {'event', 'event', 'event', 'whole-trial', 'whole-trial', 'whole-trial', 'continuous'}; %the type of events breakdown
 groupings = {1, 2, 3, 4, 5, 6, 7};
 
 [pred_allmat,pred_inds_cell,grouped_var_types] = make_predictor_matrix_generalcase({left_onsetCells{1}, right_onsetCells{1},...
@@ -135,10 +135,12 @@ end
 
 save('TB41_predallmat.mat', 'neural_matmat', 'predall_matmat', 'neural_act_mat', 'pred_allmat');
 %% Do encoding model
-approach = 'norefit';
+approach = 'norefit'; %refit is taking out the entire column and finding new inputs
+%norefit is setting b_i = 0 
 pred_types_cell_group = {'event', 'whole-trial', 'whole-trial', 'whole-trial', 'continuous'};
 
 [abs_contrib, relative_contrib, ~, r2val] = process_encoding_model(pred_allmat, pred_inds_cell, neural_act_mat, pred_types_cell,approach);
+
 %% Saving data
 csvwrite('abs_contrib.csv',abs_contrib)
 
