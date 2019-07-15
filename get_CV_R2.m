@@ -41,15 +41,10 @@ for k=1:length(test_trials_folds) %looping through the entirety of the test tria
             otherwise
                 error('unknown drop type')
         end
-<<<<<<< HEAD
-    else %when nargin is 7
-        curB = glmfit(cur_Xtrain,cur_Ytrain,'normal','constant','on');
-=======
     else
         %curB = glmfit(cur_Xtrain,cur_Ytrain,'normal','constant','on');
         Xones = [ones(size(cur_Xtrain,1),1) cur_Xtrain];
         curB = Xones \ cur_Ytrain;
->>>>>>> d87ac4aaf6216e2e14701c06312da583bf22d136
         cur_Ypred = [ones(size(cur_Xtest,1),1) cur_Xtest]*curB;
     end
     all_predicted(test_trials_folds{k},1) = mat2cell(cur_Ypred ,trial_length_vec(test_trials_folds{k}),1);

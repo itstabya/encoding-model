@@ -52,13 +52,6 @@ max_poly_deg = 3;
 % rng(0,'twister')
 full_R2_vec = zeros(numcells,1);
 partial_R2_vec = zeros(numcells,length(pred_inds_cell));
-<<<<<<< HEAD
-relative_contrib = zeros(numcells,length(pred_inds_cell)); %referencing the formula 
-abs_contrib = zeros(numcells, length(pred_inds_cell));
-
-for cellctr = 1:numcells
-    cur_good_trials = 1:find(defined_mat(:,cellctr),1,'last'); % Take out trials with nan's
-=======
 relative_contrib = zeros(numcells,length(pred_inds_cell));
 f = waitbar(0,'Please wait...');
 for cellctr = 1:numcells
@@ -66,7 +59,6 @@ for cellctr = 1:numcells
         sprintf('Fitting cell %d of %d...\n', cellctr, numcells));
     
     cur_good_trials = 1:find(defined_mat(:,cellctr),1,'last');
->>>>>>> d87ac4aaf6216e2e14701c06312da583bf22d136
     num_trials_per_fold = ceil(length(cur_good_trials)/num_cv_folds);
     
     temp_neural_act = cell2mat(neural_act_mat(cur_good_trials));
