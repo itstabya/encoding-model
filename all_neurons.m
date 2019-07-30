@@ -11,132 +11,27 @@ apr = cell(1, 180);% all previously right
 apw = cell(1, 180); % all previously wrong
 
 for k = 1:180 
-    tfs = 15; %tfs = timeframes
-    cue_cells = cell(tfs, 1); %within each cell is an added double of 173 values
-    left = []; %only giving us the i (index) of trials that have left stimulus
-    right = []; %same idea with right
-
-    stim_onset_per_trial = [];
-
-    correct = [];
-    incorrect = [];
-    prev_right = [];
-    prev_wrong = [];
-
-    one = [];
-    two = [];
-    three = [];
-    four = [];
-
-    for i = 1:length(neural_act_mat) %looping through all the trials
-
-        for j = 1:tfs
-           cue_cells{j} = [cue_cells{j}, neural_act_mat{i}(j, k)] ; %adding the neural activity that corresponds to each cue onset
-        end
-
-        %finding out when the onset occurs
-        if find(left_onsetCells{i})
-            mid = find(left_onsetCells{i});
-            left = [left, i];
-        elseif find(right_onsetCells{i})
-            mid = find(right_onsetCells{i});
-            right = [right, i];
-        end
-
-        stim_onset_per_trial = [stim_onset_per_trial, mid];
-
-        %tracking which trials are correct
-        if any(rewardsCell{i}) %if a reward is presented
-            correct = [correct, i];
-            if ~(i + 1 == 174);
-                prev_right = [prev_right, i + 1];
-            end
-        else %when there's no reward
-            incorrect = [incorrect, i];
-            if i~173;
-                prev_wrong = [prev_wrong, i + 1];
-            end
-        end
-
-         %finding out the level of difficulty
-        val = difficultyGood(i);
-        %organizing the various levels of difficulty
-        if val == 0.3200
-            one = [one, i];
-        elseif val == 0.5600
-            two = [two, i];
-        elseif val == 0.6000
-            three = [three, i];
-        elseif val == 0.6400
-            four = [four, i];
-        end
-    end
-
+    %% cue
+    cue_array = loop_across(neural_act_mat, 1:173, bopt, k);
+    
     %% difficulty levels
-
-    one_array = loop_across(neural_act_mat, one, stim_onset_per_trial, k);
-    two_array = loop_across(neural_act_mat, two, stim_onset_per_trial, k);
-    three_array = loop_across(neural_act_mat, three, stim_onset_per_trial, k);
-    four_array = loop_across(neural_act_mat, four, stim_onset_per_trial, k);
-
-    %% worrying about previously correct (prev_right + prev_wrong)
-    %timeframe is going to be the beginning
-    beginning_per_trial = (zeros(173, 1) + 6)'; % a 173 x 1 matrix of all 6 values (to work with our looping across function)
-    prev_right_array = loop_across(neural_act_mat, prev_right, beginning_per_trial, k);
-    prev_wrong_array = loop_across(neural_act_mat, prev_wrong, beginning_per_trial, k);
-    %%
-    reward = correct; %trial # that were correct and thus had a reward
-
-    %find reward_onset_per_trial through looping through reward D:
-    reward_onset_per_trial = [];
-    reward_onset_cells = cell(173, 1);
+    one_array = loop_across(neural_act_mat, t1, sopt, k);
+    two_array = loop_across(neural_act_mat, t2, sopt, k);
+    three_array = loop_across(neural_act_mat, t3, sopt, k);
+    four_array = loop_across(neural_act_mat, t4, sopt, k);
     
-    for i = 1:length(reward)
-        tn = reward(i); % tn = trial number
-        reward_onset_cells{tn} = find(rewardsCell{tn});
-    end
+    %% choices 
+    prev_right_array = loop_across(neural_act_mat, prt, bopt, k);
+    prev_wrong_array = loop_across(neural_act_mat, pwt, bopt, k);
+    reward_array = loop_across(neural_act_mat, rt, ropt, k);
+    correct_array = loop_across(neural_act_mat, ct, sopt, k);
+    incorrect_array = loop_across(neural_act_mat, wt, sopt, k);
     
-    for i = 1:length(reward_onset_cells)
-        if length(reward_onset_cells{i}) == 0 ; %this will be true if it's empty
-            reward_onset_cells{i} = 0;
-        end
-    end
-    
-    reward_onset_per_trial = cell2mat(reward_onset_cells);
-    reward_array = loop_across(neural_act_mat, reward, reward_onset_per_trial, k);
+    %% for left and right stimulus
+    left_array = loop_across(neural_act_mat, lst, sopt, k); 
+    right_array = loop_across(neural_act_mat, rst, sopt, k);
 
-    %% organizing choice
-
-    correct_array = loop_across(neural_act_mat, correct, stim_onset_per_trial, k);
-    incorrect_array = loop_across(neural_act_mat, incorrect, stim_onset_per_trial, k);
-    cue_array = cell2mat(cue_cells);
-
-    % calculating the mean - matter of doing mean(cue_array, 2)
-    % and variances var(cue_array, 2)
-     %% for left and right stimulus
-
-    left_cells = cell(tfs, 1);
-    right_cells = cell(tfs, 1);
-
-    for i = 1:length(left)
-        mid = find(left_onsetCells{left(i)});
-        start = mid - 6;
-        for j = 1:tfs
-            left_cells{j} = [left_cells{j}, neural_act_mat{left(i)}(start + j, k)];
-        end
-    end
-
-    for i = 1:length(right)
-        mid = find(right_onsetCells{right(i)});
-        start = mid - 6;
-        for j = 1:tfs
-            right_cells{j} = [right_cells{j}, neural_act_mat{right(i)}(start + j, k)];
-        end
-    end
-
-    left_array = cell2mat(left_cells);
-    right_array = cell2mat(right_cells);
-    
+    %% taking the mean value for all the trials into each neuron
     aleft{k} = mean(left_array, 2);
     aright{k} = mean(right_array, 2);
     aone{k} = mean(one_array, 2);
@@ -147,8 +42,9 @@ for k = 1:180
     acue{k} = mean(cue_array, 2);
     apr{k} = mean(prev_right_array, 2);
     apw{k} = mean(prev_wrong_array, 2);
+    
 end
-
+%% converting into matrices
 all_left = cell2mat(aleft);
 all_right = cell2mat(aright);
 all_one = cell2mat(aone);
@@ -157,7 +53,7 @@ all_three = cell2mat(athree);
 all_four = cell2mat(afour);
 all_reward = cell2mat(areward);
 all_cue = cell2mat(acue);
-all_pr = cell2mat(apr);
+all_pr = cell2mat(apr); %ASSUMING that you coded for 
 all_pw = cell2mat(apw);
 
 %we can now apply plot() or imagesc()
@@ -177,5 +73,21 @@ all_pw = cell2mat(apw);
 [prp, prp_x, prp_y] = find_peaks(all_pr);
 [pwp, pwp_x, pwp_y] = find_peaks(all_pw);
  % can use sum(op_x(:) = val) to calculate how many points are in each
- % timeframe
 
+ %% working off of the bimodal distribution
+ [l1, l2, l1n, l2n] = split_neurons(aleft);
+ [r1, r2, r1n, r2n] = split_neurons(aright);
+ [o1, o2, o1n, o2n] = split_neurons(aone);
+ [tw1, tw2, tw1n, tw2n] = split_neurons(atwo);
+ [th1, th2, th1n, th2n] = split_neurons(athree);
+ [f1, f2, f1n, f2n] = split_neurons(afour);
+ [rew1, rew2, rew1n, rew2n] = split_neurons(areward);
+ [c1, c2, c1n, c2n] = split_neurons(acue);
+ [pr1, pr2, pr1n, pr2n] = split_neurons(apr);
+ [pw1, pw2, pw1n, pw2n] = split_neurons(apw);
+
+ %% finding if any neurons move from the first peak to the second peak
+ % with the different left right stimulus
+%  l1r2_neurons = graph_these_neurons(l1n, r2n, neural_act_mat, stim_onset_per_trial);
+%  l2r1_neurons = graph_these_neurons(l2n, r1n, neural_act_mat, stim_onset_per_trial);
+ 

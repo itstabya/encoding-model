@@ -57,7 +57,7 @@ for i = 1:length(neural_act_mat) %looping through all the trials
         end
     else %when there's no reward
         incorrect = [incorrect, i];
-        if i~173;
+        if i ~= 173;
             prev_wrong = [prev_wrong, i + 1];
         end
     end
