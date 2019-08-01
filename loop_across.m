@@ -2,7 +2,7 @@ function [array] = loop_across(neural_mat, tn_list, timeframe_list, neuron)
 % neural_mat = the raw data
 % list = list of trial numbers
 % timeframe list = corresponding timeframe
-    tfs = 20; %tfs = timeframes
+    tfs = 23; %tfs = timeframes
     cell_container = cell(tfs, 1);
     for i = 1:length(tn_list)
         trial_num = tn_list(i);
